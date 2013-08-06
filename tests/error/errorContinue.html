@@ -6,16 +6,25 @@
     <script type="text/javascript" src="../doh/runner.js"></script>
     <script type="text/javascript" src="../doh/_browserRunner.js"></script>
     <script type="text/javascript">
+        requirejs.config({
+            paths: {
+                broken: "http://google.com:81/test",
+                twitter: "http://platform.twitter.com/widgets",
+                gplus: "https://apis.google.com/js/plusone",
+            }
+        });
         var doneCount = 0;
         var master = new doh.Deferred();
         function done() {
             master.callback(true);
         }
-
+        i = 0;
         requirejs.onError = function (err) {
-            if (err.requireModules) {
+            i++;
+            if (err.requireModules && i > 1) {
                 setTimeout(function () {
-                    requirejs(['c', 'd'], function (c, d) {
+                    requirejs(['c', 'd', 'testModule'], function (c, d, t) {
+                        console.log(t);
                         doh.is('c', c.name);
                         doh.is('a', c.a.name);
                         doh.is('d', d.name);
@@ -29,10 +38,7 @@
 
             throw err;
         };
-
         requirejs({
-            waitSeconds: 2,
-            enforceDefine: true
         }, ['a', 'b', 'broken'], function (a, b, broken) {
             doh.is("not-a", a.name);
             done();
@@ -43,7 +49,7 @@
             [
                 {
                     name: "errorContinue",
-                    timeout: 5000,
+                    timeout: 15000,
                     runTest: function () {
                         return master;
                     }
